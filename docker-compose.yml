@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  bitcoind:
+    image: kylemanna/bitcoind
+    command: >
+      -testnet
+      -rpcuser=user
+      -rpcpassword=pass
+      -rpcallowip=0.0.0.0/0
+      -rpcbind=0.0.0.0
+      -server
+      -txindex
+      -printtoconsole
+      -zmqpubrawblock=tcp://0.0.0.0:28332
+      -zmqpubrawtx=tcp://0.0.0.0:28333
+    ports:
+      - "18332:18332"
+      - "28332:28332"
+      - "28333:28333"
+    volumes:
+      - bitcoin_data:/bitcoin
+
+  lnd:
+    image: lightninglabs/lnd:v0.15.5-beta
+    depends_on:
+      - bitcoind
+    command: >
+      --bitcoin.active
+      --bitcoin.testnet
+      --bitcoin.node=bitcoind
+      --bitcoind.rpchost=bitcoind
+      --bitcoind.rpcuser=user
+      --bitcoind.rpcpass=pass
+      --bitcoind.zmqpubrawblock=tcp://bitcoind:28332
+      --bitcoind.zmqpubrawtx=tcp://bitcoind:28333
+      --externalip=127.0.0.1
+      --rpclisten=0.0.0.0:10009
+      --restlisten=0.0.0.0:8080
+      --noseedbackup
+    ports:
+      - "10009:10009"
+      - "8080:8080"
+    volumes:
+      - ./lnd_data:/root/.lnd
+
+volumes:
+  bitcoin_data:
